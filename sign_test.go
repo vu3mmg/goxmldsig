@@ -1,6 +1,7 @@
 package dsig
 
 import (
+	"bytes"
 	"crypto"
 	"crypto/rsa"
 	"crypto/x509"
@@ -8,74 +9,15 @@ import (
 	"encoding/pem"
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"testing"
+	"time"
 
 	"github.com/beevik/etree"
 	"github.com/stretchr/testify/require"
 )
 
-func TestSign_RSAKeyValue(t *testing.T) {
-	tryout := `<?xml version="1.0" encoding="UTF-8"?><ns2:ReqDiagnostic xmlns:ns2="http://bbps.org/schema"><Head origInst="FE41" refId="n8tsUgAINn71teBaQVYPwWa6Ujw20341832" ts="2022-02-03T18:32:30+05:30" ver="1.0"/></ns2:ReqDiagnostic>`
 
-	doc := etree.NewDocument()
-	err := doc.ReadFromBytes([]byte(tryout))
-	if err != nil {
-		panic(err)
-	}
-
-	pkeyBytes, err := ioutil.ReadFile("private_key.der")
-	if err != nil {
-		panic(err)
-	}
-
-	certBytes, err := ioutil.ReadFile("signer.crt")
-	block, _ := pem.Decode(certBytes)
-	certBytes = block.Bytes
-	_, err = x509.ParseCertificate(certBytes)
-	if err != nil {
-		panic(err)
-	}
-
-	privateKey, err := x509.ParsePKCS8PrivateKey(pkeyBytes)
-	if err != nil {
-		panic(err)
-	}
-
-	storeForTest := &MemoryX509KeyStore{}
-	storeForTest.SetKeyPair(privateKey.( *rsa.PrivateKey), certBytes)
-	ctx := NewDefaultSigningContext(storeForTest)
-	ctx.Canonicalizer = MakeC14N10RecCanonicalizer()
-	ctx.Prefix = ""
-	ctx.KeyInfoType = RSAKeyInfo
-	signedElement, err := ctx.SignEnveloped(doc.Root())
-	require.NoError(t, err)
-
-	element := signedElement.FindElement("//Signature/SignatureValue")
-	require.NotEmpty(t, element)
-
-	element = signedElement.FindElement("//Signature/KeyInfo/KeyValue/RSAKeyValue/Modulus")
-	require.NotEmpty(t, element)
-
-	element = signedElement.FindElement("//Signature/KeyInfo/KeyValue/RSAKeyValue/Exponent")
-	require.NotEmpty(t, element)
-
-		fmt.Printf("all test")
-		doc = etree.NewDocument()
-		doc.SetRoot(signedElement)
-		signedXml, err := doc.WriteToString()
-		if err != nil {
-			panic(err)
-		}
-		fmt.Printf(signedXml)
-	//
-	//	//ioutil.WriteFile("signed_xml.txt", []byte(signedXml), 777)
-	//	//
-	//	//signedBytes, err := ioutil.ReadFile("signed_xml.txt")
-	//	//if err != nil {
-	//	//	panic(err)
-	//	//}
-	//
-}
 
 func TestSign(t *testing.T) {
 	randomKeyStore := RandomKeyStoreForTest()
@@ -194,3 +136,112 @@ func TestSignNonDefaultID(t *testing.T) {
 	refURI := ref.SelectAttrValue("URI", "")
 	require.Equal(t, refURI, "#"+id)
 }
+
+func getDateTime() string {
+
+	current_time := time.Now()
+
+	formatted := fmt.Sprintf ("%d-%02d-%02dT%02d:%02d:%02d+05:30\n",
+		current_time.Year(), current_time.Month(), current_time.Day(),
+		current_time.Hour(), current_time.Minute(), current_time.Second())
+	return formatted
+}
+
+func getJjulian() string {
+
+	current_time := time.Now()
+
+	formatted := fmt.Sprintf ("%d-%02d-%02dT%02d:%02d:%02d+05:30\n",
+		current_time.Year(), current_time.Month(), current_time.Day(),
+		current_time.Hour(), current_time.Minute(), current_time.Second())
+	return formatted
+}
+
+
+
+func TestSign_RSAKeyValue(t *testing.T) {
+
+	fmt.Println("Current time",getDateTime())
+	tryout := `<?xml version="1.0" encoding="UTF-8"?><ns2:ReqDiagnostic xmlns:ns2="http://bbps.org/schema"><Head origInst="FE41" refId="n8tsUgAINn71teBaQVYPwWa6Ujw20341832" ts="2022-02-03T18:32:30+05:30" ver="1.0"/></ns2:ReqDiagnostic>`
+
+	doc := etree.NewDocument()
+	err := doc.ReadFromBytes([]byte(tryout))
+	if err != nil {
+		panic(err)
+	}
+
+	pkeyBytes, err := ioutil.ReadFile("/Users/vu3mmg/work/2wayssl/certs/private_key.der")
+	if err != nil {
+		panic(err)
+	}
+
+	certBytes, err := ioutil.ReadFile("/Users/vu3mmg/work/2wayssl/certs/digiledge_signer.crt")
+	block, _ := pem.Decode(certBytes)
+	certBytes = block.Bytes
+	_, err = x509.ParseCertificate(certBytes)
+	if err != nil {
+		panic(err)
+	}
+
+	privateKey, err := x509.ParsePKCS8PrivateKey(pkeyBytes)
+	if err != nil {
+		panic(err)
+	}
+
+	storeForTest := &MemoryX509KeyStore{}
+	storeForTest.SetKeyPair(privateKey.( *rsa.PrivateKey), certBytes)
+	ctx := NewDefaultSigningContext(storeForTest)
+	ctx.Canonicalizer = MakeC14N10RecCanonicalizer()
+	ctx.Prefix = ""
+	ctx.KeyInfoType = RSAKeyInfo
+	signedElement, err := ctx.SignEnveloped(doc.Root())
+	require.NoError(t, err)
+
+	element := signedElement.FindElement("//Signature/SignatureValue")
+	require.NotEmpty(t, element)
+
+	element = signedElement.FindElement("//Signature/KeyInfo/KeyValue/RSAKeyValue/Modulus")
+	require.NotEmpty(t, element)
+
+	element = signedElement.FindElement("//Signature/KeyInfo/KeyValue/RSAKeyValue/Exponent")
+	require.NotEmpty(t, element)
+
+	fmt.Printf("all test")
+	doc = etree.NewDocument()
+	doc.SetRoot(signedElement)
+	signedXml, err := doc.WriteToString()
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println("Signed XML -----------------")
+	fmt.Println(signedXml)
+	fmt.Println("Signed XML -----------------")
+	//
+	//	//ioutil.WriteFile("signed_xml.txt", []byte(signedXml), 777)
+	//	//
+	//	//signedBytes, err := ioutil.ReadFile("signed_xml.txt")
+	//	//if err != nil {
+	//	//	panic(err)
+	//	//}
+	//
+
+	body := signedXml
+
+	client := &http.Client{}
+	// build a new request, but not doing the POST yet
+	req, err := http.NewRequest("POST", "http://localhost:9084/", bytes.NewBuffer([]byte(body)))
+	if err != nil {
+		fmt.Println(err)
+	}
+	// you can then set the Header here
+	// I think the content-type should be "application/xml" like json...
+	req.Header.Add("Content-Type", "application/xml; charset=utf-8")
+	// now POST it
+	resp, err := client.Do(req)
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println(resp)
+}
+
