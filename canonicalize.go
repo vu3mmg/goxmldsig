@@ -4,7 +4,7 @@ import (
 	"sort"
 
 	"github.com/beevik/etree"
-	"github.com/kartiksirigeri/goxmldsig/etreeutils"
+	"github.com/vu3mmg/goxmldsig/etreeutils"
 )
 
 // Canonicalizer is an implementation of a canonicalization algorithm.

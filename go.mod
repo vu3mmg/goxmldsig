@@ -1,4 +1,4 @@
-module github.com/kartiksirigeri/goxmldsig
+module github.com/vu3mmg/goxmldsig
 
 go 1.16
 
