@@ -11,7 +11,7 @@
      </RiskScores>
   </Txn>
   <Customer mobile="9505XXXX98">
-     <Tag name="EMAIL" value="manoj.chekuri@npci.org.in"/>
+     <Tag name="EMAIL" value="abc@org.in"/>
      <Tag name="AADHAAR" value="123456789012"/>
      <Tag name="PAN" value="BXXCG7754K"/>
   </Customer>
